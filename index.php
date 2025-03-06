@@ -158,6 +158,18 @@ include 'includes/header.php';
         <i class="bi bi-list-check"></i> Listar Ventas
     </a>
 </div>
+                    <div class="col-md-3 mb-3">
+    <a href="modules/facturas/generar.php" class="btn btn-outline-primary btn-lg d-block">
+        <i class="bi bi-receipt"></i> Generar Facturas
+    </a>
+</div>
+                    <div class="col-md-3 mb-3">
+    <a href="modules/facturas/index.php" class="btn btn-outline-primary btn-lg d-block">
+        <i class="bi bi-file-earmark-text"></i> Ver Facturas
+    </a>
+</div>
+
+                </div>
 
                 </div>
             </div>
