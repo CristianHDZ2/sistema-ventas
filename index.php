@@ -153,6 +153,12 @@ include 'includes/header.php';
                             <i class="bi bi-box2"></i> Nuevo Producto
                         </a>
                     </div>
+                    <div class="col-md-3 mb-3">
+    <a href="modules/ventas/listar.php" class="btn btn-outline-primary btn-lg d-block">
+        <i class="bi bi-list-check"></i> Listar Ventas
+    </a>
+</div>
+
                 </div>
             </div>
         </div>
@@ -229,7 +235,7 @@ include 'includes/header.php';
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-end"><?php echo number_format($ruta['total_ventas']); ?></td>
-                                    <td class="text-end">$<?php echo number_format($ruta['total_monto'], 2); ?></td>
+                                    <td class="text-end">$<?php echo number_format($ruta['total_monto'] ?? 0, 2); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>

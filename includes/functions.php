@@ -372,4 +372,117 @@ function reporteVentasPorRuta($fecha_inicio, $fecha_fin) {
     
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+
+/**
+ * Obtener una venta específica por su ID
+ */
+function obtenerVentaPorId($id) {
+    global $conn;
+    
+    $sql = "SELECT v.*, r.nombre as ruta_nombre 
+            FROM ventas v 
+            JOIN rutas r ON v.ruta_id = r.id 
+            WHERE v.id = :id";
+    
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+    $stmt->execute();
+    
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Eliminar una venta y sus detalles
+ */
+function eliminarVenta($id) {
+    global $conn;
+    
+    try {
+        // Iniciar transacción
+        $conn->beginTransaction();
+        
+        // Eliminar los detalles de la venta primero (restricción de clave foránea)
+        $sql = "DELETE FROM detalle_ventas WHERE venta_id = :id";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        // Ahora eliminar la venta
+        $sql = "DELETE FROM ventas WHERE id = :id";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        // Confirmar transacción
+        $conn->commit();
+        
+        return true;
+    } catch (PDOException $e) {
+        // En caso de error, revertir cambios
+        $conn->rollBack();
+        throw $e;
+    }
+}
+
+/**
+ * Actualizar una venta existente
+ */
+function actualizarVenta($id, $fecha, $ruta_id, $productos) {
+    global $conn;
+    
+    try {
+        // Iniciar transacción
+        $conn->beginTransaction();
+        
+        // Calcular el nuevo total
+        $total = 0;
+        foreach ($productos as $producto) {
+            $total += $producto['cantidad'] * $producto['precio'];
+        }
+        
+        // Actualizar la información básica de la venta
+        $sql = "UPDATE ventas SET fecha = :fecha, ruta_id = :ruta_id, total = :total WHERE id = :id";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->bindParam(':fecha', $fecha);
+        $stmt->bindParam(':ruta_id', $ruta_id);
+        $stmt->bindParam(':total', $total);
+        $stmt->execute();
+        
+        // Eliminar los detalles existentes
+        $sql = "DELETE FROM detalle_ventas WHERE venta_id = :id";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        // Insertar los nuevos detalles
+        $sql = "INSERT INTO detalle_ventas (venta_id, producto_id, cantidad, precio_unitario, subtotal) 
+                VALUES (:venta_id, :producto_id, :cantidad, :precio_unitario, :subtotal)";
+        
+        $stmt = $conn->prepare($sql);
+        
+        foreach ($productos as $producto) {
+            $producto_id = $producto['id'];
+            $cantidad = $producto['cantidad'];
+            $precio = $producto['precio'];
+            $subtotal = $cantidad * $precio;
+            
+            $stmt->bindParam(':venta_id', $id);
+            $stmt->bindParam(':producto_id', $producto_id);
+            $stmt->bindParam(':cantidad', $cantidad);
+            $stmt->bindParam(':precio_unitario', $precio);
+            $stmt->bindParam(':subtotal', $subtotal);
+            $stmt->execute();
+        }
+        
+        // Confirmar transacción
+        $conn->commit();
+        
+        return true;
+    } catch (PDOException $e) {
+        // En caso de error, revertir cambios
+        $conn->rollBack();
+        throw $e;
+    }
+}
 ?>

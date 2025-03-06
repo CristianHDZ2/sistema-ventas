@@ -29,15 +29,16 @@
             <a class="nav-link" href="<?php echo $base_url; ?>/"><i class="bi bi-house-fill"></i> Inicio</a>
           </li>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownVentas" role="button" data-bs-toggle="dropdown">
-              <i class="bi bi-cart-fill"></i> Ventas
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="navbarDropdownVentas">
-              <li><a class="dropdown-item" href="<?php echo $base_url; ?>/modules/ventas/registrar.php">Registrar Venta</a></li>
-              <li><a class="dropdown-item" href="<?php echo $base_url; ?>/modules/ventas/reporte-diario.php">Reporte Diario</a></li>
-              <li><a class="dropdown-item" href="<?php echo $base_url; ?>/modules/ventas/reporte-mensual.php">Reporte Mensual</a></li>
-            </ul>
-          </li>
+  <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownVentas" role="button" data-bs-toggle="dropdown">
+    <i class="bi bi-cart-fill"></i> Ventas
+  </a>
+  <ul class="dropdown-menu" aria-labelledby="navbarDropdownVentas">
+    <li><a class="dropdown-item" href="<?php echo $base_url; ?>/modules/ventas/registrar.php">Registrar Venta</a></li>
+    <li><a class="dropdown-item" href="<?php echo $base_url; ?>/modules/ventas/listar.php">Lista de Ventas</a></li>
+    <li><a class="dropdown-item" href="<?php echo $base_url; ?>/modules/ventas/reporte-diario.php">Reporte Diario</a></li>
+    <li><a class="dropdown-item" href="<?php echo $base_url; ?>/modules/ventas/reporte-mensual.php">Reporte Mensual</a></li>
+  </ul>
+</li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProductos" role="button" data-bs-toggle="dropdown">
               <i class="bi bi-box-seam"></i> Productos
