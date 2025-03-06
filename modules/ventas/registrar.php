@@ -319,18 +319,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const templateProducto = document.getElementById('template-producto');
     const templateProductoBigCola = document.getElementById('template-producto-big-cola');
     const inputTotal = document.getElementById('total');
+    const formVenta = document.getElementById('form-venta');
+    
+    // Arrays para mantener listas de productos y sus selecciones
+    let productosSeleccionados = [];
+    let productosBigColaSeleccionados = [];
+    
+    // Inicialmente deshabilitar los desplegables de productos y botones de agregar
+    deshabilitarSeleccionProductos(true);
     
     // Cambiar visualización según el tipo de ruta
     if (selectRuta) {
         selectRuta.addEventListener('change', function() {
+            const rutaSeleccionada = this.value !== '';
+            
+            // Habilitar o deshabilitar controles de productos según si hay ruta seleccionada
+            deshabilitarSeleccionProductos(!rutaSeleccionada);
+            
+            if (!rutaSeleccionada) {
+                return; // No continuar si no hay ruta seleccionada
+            }
+            
             const esBigCola = this.options[this.selectedIndex].getAttribute('data-big-cola') === '1';
             
             if (esBigCola) {
                 divProductosBigCola.style.display = 'block';
                 divProductosGeneral.style.display = 'none';
+                // Reset selected products when changing routes
+                productosSeleccionados = [];
+                productosBigColaSeleccionados = [];
+                actualizarSelectsProductos();
             } else {
                 divProductosBigCola.style.display = 'none';
                 divProductosGeneral.style.display = 'block';
+                // Reset selected products when changing routes
+                productosSeleccionados = [];
+                productosBigColaSeleccionados = [];
+                actualizarSelectsProductos();
             }
         });
         
@@ -338,10 +363,108 @@ document.addEventListener('DOMContentLoaded', function() {
         selectRuta.dispatchEvent(new Event('change'));
     }
     
+    // Validación del formulario antes de enviar
+    if (formVenta) {
+        formVenta.addEventListener('submit', function(e) {
+            // Verificar si hay una ruta seleccionada
+            if (!selectRuta.value) {
+                e.preventDefault();
+                alert('Debe seleccionar una ruta antes de registrar la venta.');
+                return false;
+            }
+            
+            // Verificar si hay productos agregados
+            const hayProductos = document.querySelectorAll('.row-producto').length > 0;
+            const hayProductosSeleccionados = document.querySelectorAll('.select-producto option:checked[value!=""]').length > 0;
+            
+            if (!hayProductos || !hayProductosSeleccionados) {
+                e.preventDefault();
+                alert('Debe agregar al menos un producto a la venta.');
+                return false;
+            }
+            
+            // Verificar si todos los productos tienen cantidades
+            const inputsCantidad = document.querySelectorAll('.input-cantidad');
+            let cantidadesValidas = true;
+            
+            inputsCantidad.forEach(function(input) {
+                if (!input.value || parseFloat(input.value) <= 0) {
+                    cantidadesValidas = false;
+                }
+            });
+            
+            if (!cantidadesValidas) {
+                e.preventDefault();
+                alert('Todos los productos deben tener cantidades válidas.');
+                return false;
+            }
+            
+            // Si todo está bien, el formulario se enviará normalmente
+            return true;
+        });
+    }
+    
+    // Función para deshabilitar/habilitar controles de productos
+    function deshabilitarSeleccionProductos(deshabilitar) {
+        // Deshabilitar/habilitar los selects de productos
+        document.querySelectorAll('.select-producto').forEach(function(select) {
+            select.disabled = deshabilitar;
+        });
+        
+        // Deshabilitar/habilitar los inputs de cantidad
+        document.querySelectorAll('.input-cantidad').forEach(function(input) {
+            input.disabled = deshabilitar;
+        });
+        
+        // Deshabilitar/habilitar botones de agregar producto
+        if (btnAgregarProducto) btnAgregarProducto.disabled = deshabilitar;
+        if (btnAgregarProductoBigCola) btnAgregarProductoBigCola.disabled = deshabilitar;
+        
+        // Si está deshabilitado, mostrar mensaje
+        const mensajeRuta = document.getElementById('mensaje-seleccionar-ruta');
+        if (deshabilitar) {
+            if (!mensajeRuta) {
+                const mensaje = document.createElement('div');
+                mensaje.id = 'mensaje-seleccionar-ruta';
+                mensaje.className = 'alert alert-warning mt-3';
+                mensaje.textContent = 'Debe seleccionar una ruta antes de agregar productos.';
+                
+                divProductosGeneral.prepend(mensaje);
+                
+                const mensajeBigCola = mensaje.cloneNode(true);
+                divProductosBigCola.prepend(mensajeBigCola);
+            }
+        } else {
+            if (mensajeRuta) {
+                document.querySelectorAll('#mensaje-seleccionar-ruta').forEach(function(elemento) {
+                    elemento.remove();
+                });
+            }
+        }
+    }
+    
     // Agregar nuevo producto general
     if (btnAgregarProducto && containerProductos && templateProducto) {
         btnAgregarProducto.addEventListener('click', function() {
+            // Verificar si hay una ruta seleccionada
+            if (!selectRuta.value) {
+                alert('Debe seleccionar una ruta antes de agregar productos.');
+                return;
+            }
+            
             const template = templateProducto.content.cloneNode(true);
+            
+            // Eliminar productos ya seleccionados del nuevo select
+            const newSelect = template.querySelector('.select-producto');
+            if (newSelect) {
+                for (const productoId of productosSeleccionados) {
+                    const option = newSelect.querySelector(`option[value="${productoId}"]`);
+                    if (option) {
+                        option.remove();
+                    }
+                }
+            }
+            
             containerProductos.appendChild(template);
             
             // Actualizar eventos después de agregar el nuevo elemento
@@ -352,7 +475,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Agregar nuevo producto Big Cola
     if (btnAgregarProductoBigCola && containerProductosBigCola && templateProductoBigCola) {
         btnAgregarProductoBigCola.addEventListener('click', function() {
+            // Verificar si hay una ruta seleccionada
+            if (!selectRuta.value) {
+                alert('Debe seleccionar una ruta antes de agregar productos.');
+                return;
+            }
+            
             const template = templateProductoBigCola.content.cloneNode(true);
+            
+            // Eliminar productos ya seleccionados del nuevo select
+            const newSelect = template.querySelector('.select-producto');
+            if (newSelect) {
+                for (const productoId of productosBigColaSeleccionados) {
+                    const option = newSelect.querySelector(`option[value="${productoId}"]`);
+                    if (option) {
+                        option.remove();
+                    }
+                }
+            }
+            
             containerProductosBigCola.appendChild(template);
             
             // Actualizar eventos después de agregar el nuevo elemento
@@ -368,8 +509,19 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.btn-eliminar-producto').forEach(function(boton) {
             boton.addEventListener('click', function() {
                 const fila = this.closest('.row-producto');
+                const select = fila.querySelector('.select-producto');
+                const productoId = select.value;
+                
+                // Eliminar de la lista de seleccionados
+                if (divProductosBigCola.style.display === 'block') {
+                    productosBigColaSeleccionados = productosBigColaSeleccionados.filter(id => id !== productoId);
+                } else {
+                    productosSeleccionados = productosSeleccionados.filter(id => id !== productoId);
+                }
+                
                 fila.remove();
                 calcularTotal();
+                actualizarSelectsProductos();
             });
         });
         
@@ -383,17 +535,96 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Evento para actualizar precio al cambiar producto
         document.querySelectorAll('.select-producto').forEach(function(select) {
+            // Guardar el valor anterior para poder eliminar de la lista de seleccionados si cambia
+            let valorAnterior = select.value;
+            
             select.addEventListener('change', function() {
                 const fila = this.closest('.row-producto');
                 const option = this.options[this.selectedIndex];
+                const productoId = this.value;
                 const precio = option.getAttribute('data-precio');
                 const inputPrecio = fila.querySelector('.input-precio');
+                
+                // Eliminar el producto anterior de la lista de seleccionados
+                if (divProductosBigCola.style.display === 'block') {
+                    productosBigColaSeleccionados = productosBigColaSeleccionados.filter(id => id !== valorAnterior);
+                    
+                    // Agregar el nuevo producto a la lista de seleccionados
+                    if (productoId) {
+                        productosBigColaSeleccionados.push(productoId);
+                    }
+                } else {
+                    productosSeleccionados = productosSeleccionados.filter(id => id !== valorAnterior);
+                    
+                    // Agregar el nuevo producto a la lista de seleccionados
+                    if (productoId) {
+                        productosSeleccionados.push(productoId);
+                    }
+                }
+                
+                valorAnterior = productoId;
                 
                 if (inputPrecio && precio) {
                     inputPrecio.value = precio;
                     calcularSubtotal(fila);
                 }
+                
+                actualizarSelectsProductos();
             });
+        });
+    }
+    
+    function actualizarSelectsProductos() {
+        // Actualizar selects para productos generales
+        const selectsGeneral = document.querySelectorAll('#productos-general .select-producto');
+        
+        selectsGeneral.forEach(function(select, index) {
+            // Si es el select actualmente activo, no modificar
+            if (select === document.activeElement) return;
+            
+            const valorActual = select.value;
+            
+            // Restaurar todas las opciones
+            select.innerHTML = templateProducto.content.querySelector('.select-producto').innerHTML;
+            
+            // Eliminar opciones de productos ya seleccionados (excepto el seleccionado en este select)
+            for (const productoId of productosSeleccionados) {
+                if (productoId !== valorActual) {
+                    const option = select.querySelector(`option[value="${productoId}"]`);
+                    if (option) {
+                        option.remove();
+                    }
+                }
+            }
+            
+            // Restaurar el valor seleccionado
+            select.value = valorActual;
+        });
+        
+        // Actualizar selects para productos Big Cola
+        const selectsBigCola = document.querySelectorAll('#productos-big-cola .select-producto');
+        
+        selectsBigCola.forEach(function(select) {
+            // Si es el select actualmente activo, no modificar
+            if (select === document.activeElement) return;
+            
+            const valorActual = select.value;
+            
+            // Restaurar todas las opciones
+            select.innerHTML = templateProductoBigCola.content.querySelector('.select-producto').innerHTML;
+            
+            // Eliminar opciones de productos ya seleccionados (excepto el seleccionado en este select)
+            for (const productoId of productosBigColaSeleccionados) {
+                if (productoId !== valorActual) {
+                    const option = select.querySelector(`option[value="${productoId}"]`);
+                    if (option) {
+                        option.remove();
+                    }
+                }
+            }
+            
+            // Restaurar el valor seleccionado
+            select.value = valorActual;
         });
     }
     
@@ -421,6 +652,21 @@ document.addEventListener('DOMContentLoaded', function() {
             inputTotal.value = total.toFixed(2);
         }
     }
+    
+    // Actualizar las listas desplegables al cargar la página
+    const selectsProductoInicial = document.querySelectorAll('.select-producto');
+    selectsProductoInicial.forEach(function(select) {
+        if (select.value) {
+            if (select.closest('#productos-big-cola')) {
+                productosBigColaSeleccionados.push(select.value);
+            } else {
+                productosSeleccionados.push(select.value);
+            }
+        }
+    });
+    
+    // Actualizar selectores iniciales
+    actualizarSelectsProductos();
 });
 </script>
 

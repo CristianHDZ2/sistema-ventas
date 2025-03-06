@@ -6,11 +6,11 @@ session_start();
 require_once '../../includes/functions.php';
 
 // Mes y año por defecto (mes actual)
-$mes = isset($_GET['mes']) ? intval($_GET['mes']) : date('m');
-$ano = isset($_GET['ano']) ? intval($_GET['ano']) : date('Y');
+$mes = isset($_GET['mes']) ? intval($_GET['mes']) : intval(date('m'));
+$ano = isset($_GET['ano']) ? intval($_GET['ano']) : intval(date('Y'));
 
 // Calcular fechas de inicio y fin del mes
-$fecha_inicio = "$ano-$mes-01";
+$fecha_inicio = sprintf("%04d-%02d-01", $ano, $mes);
 $fecha_fin = date('Y-m-t', strtotime($fecha_inicio));
 
 // Obtener ventas del mes
