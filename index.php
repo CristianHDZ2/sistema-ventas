@@ -154,23 +154,25 @@ include 'includes/header.php';
                         </a>
                     </div>
                     <div class="col-md-3 mb-3">
-    <a href="modules/ventas/listar.php" class="btn btn-outline-primary btn-lg d-block">
-        <i class="bi bi-list-check"></i> Listar Ventas
-    </a>
-</div>
+                        <a href="modules/ventas/listar.php" class="btn btn-outline-primary btn-lg d-block">
+                            <i class="bi bi-list-check"></i> Listar Ventas
+                        </a>
+                    </div>
                     <div class="col-md-3 mb-3">
-    <a href="modules/facturas/generar.php" class="btn btn-outline-primary btn-lg d-block">
-        <i class="bi bi-receipt"></i> Generar Facturas
-    </a>
-</div>
+                        <a href="modules/facturas/generar.php" class="btn btn-outline-primary btn-lg d-block">
+                            <i class="bi bi-receipt"></i> Generar Facturas
+                        </a>
+                    </div>
                     <div class="col-md-3 mb-3">
-    <a href="modules/facturas/index.php" class="btn btn-outline-primary btn-lg d-block">
-        <i class="bi bi-file-earmark-text"></i> Ver Facturas
-    </a>
-</div>
-
-                </div>
-
+                        <a href="modules/facturas/index.php" class="btn btn-outline-primary btn-lg d-block">
+                            <i class="bi bi-file-earmark-text"></i> Ver Facturas
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="modules/rutas/agregar.php" class="btn btn-outline-primary btn-lg d-block">
+                            <i class="bi bi-signpost-2"></i> Nueva Ruta
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

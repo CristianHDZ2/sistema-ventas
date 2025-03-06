@@ -1,0 +1,42 @@
+# Activar el motor de reescritura
+RewriteEngine On
+
+# Establecer directorio base donde se aplicarán las reglas de reescritura
+# Ajusta esto si tu sistema está en un subdirectorio
+RewriteBase /sistema-ventas/
+
+# No aplicar reglas a archivos o directorios que existan físicamente
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Rutas para las páginas principales
+RewriteRule ^inicio/?$ index.php [L]
+RewriteRule ^productos/?$ modules/productos/index.php [L]
+RewriteRule ^producto/nuevo/?$ modules/productos/agregar.php [L]
+RewriteRule ^producto/editar/([0-9]+)/?$ modules/productos/editar.php?id=$1 [L]
+RewriteRule ^producto/eliminar/([0-9]+)/?$ modules/productos/eliminar.php?id=$1 [L]
+
+# Rutas para ventas
+RewriteRule ^ventas/?$ modules/ventas/listar.php [L]
+RewriteRule ^venta/nueva/?$ modules/ventas/registrar.php [L]
+RewriteRule ^venta/ver/([0-9]+)/?$ modules/ventas/ver.php?id=$1 [L]
+RewriteRule ^venta/editar/([0-9]+)/?$ modules/ventas/editar.php?id=$1 [L]
+RewriteRule ^venta/eliminar/([0-9]+)/?$ modules/ventas/eliminar.php?id=$1 [L]
+RewriteRule ^reporte/diario/?$ modules/ventas/reporte-diario.php [L]
+RewriteRule ^reporte/mensual/?$ modules/ventas/reporte-mensual.php [L]
+
+# Rutas para facturas
+RewriteRule ^facturas/?$ modules/facturas/index.php [L]
+RewriteRule ^factura/generar/?$ modules/facturas/generar.php [L]
+RewriteRule ^factura/ver/([0-9]+)/?$ modules/facturas/ver.php?id=$1 [L]
+RewriteRule ^factura/imprimir/([0-9]+)/?$ modules/facturas/imprimir.php?id=$1 [L]
+RewriteRule ^factura/eliminar/([0-9]+)/?$ modules/facturas/eliminar.php?id=$1 [L]
+
+# Rutas para rutas
+RewriteRule ^rutas/?$ modules/rutas/index.php [L]
+RewriteRule ^ruta/nueva/?$ modules/rutas/agregar.php [L]
+RewriteRule ^ruta/editar/([0-9]+)/?$ modules/rutas/editar.php?id=$1 [L]
+RewriteRule ^ruta/eliminar/([0-9]+)/?$ modules/rutas/eliminar.php?id=$1 [L]
+
+# Regla para atrapar cualquier otra URL y redirigir a 404 o a la página principal
+RewriteRule ^ index.php [L]
