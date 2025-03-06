@@ -77,6 +77,22 @@
     <?php if (isset($_SESSION['alerta'])): ?>
     <div class="alert alert-<?php echo $_SESSION['alerta']['tipo']; ?> alert-dismissible fade show" role="alert">
       <?php echo $_SESSION['alerta']['mensaje']; ?>
+      
+      <?php if (isset($_SESSION['alerta']['detalles']) && is_array($_SESSION['alerta']['detalles'])): ?>
+        <button class="btn btn-sm btn-outline-dark mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#detallesAlerta">
+          Ver detalles <i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="collapse mt-2" id="detallesAlerta">
+          <div class="card card-body">
+            <ul class="mb-0">
+              <?php foreach ($_SESSION['alerta']['detalles'] as $detalle): ?>
+                <li><?php echo $detalle; ?></li>
+              <?php endforeach; ?>
+            </ul>
+          </div>
+        </div>
+      <?php endif; ?>
+      
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     <?php unset($_SESSION['alerta']); ?>

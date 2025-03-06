@@ -14,6 +14,7 @@ $max_factura = isset($_POST['max_factura']) ? floatval($_POST['max_factura']) : 
 $ventas_productos = [];
 $errores = [];
 $mensaje_exito = '';
+$resultado_generacion = null;
 
 // Procesar el formulario si se ha enviado
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -36,8 +37,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Generar facturas
             try {
                 $resultado = generarFacturas($fecha, $ventas_productos, $min_factura, $max_factura);
+                $resultado_generacion = $resultado;
+                
                 if ($resultado['exito']) {
-                    $mensaje_exito = "Se han generado " . $resultado['total_facturas'] . " facturas correctamente.";
+                    // Calcular la diferencia entre ventas y facturas
+                    $total_ventas = 0;
+                    foreach ($ventas_productos as $producto) {
+                        $total_ventas += $producto['total_ventas'];
+                    }
+                    
+                    $total_facturas = $resultado['total_generado'];
+                    $diferencia = abs($total_ventas - $total_facturas);
+                    
+                    $mensaje_exito = "Se han generado " . $resultado['total_facturas'] . " facturas correctamente por un monto total de $" . number_format($total_facturas, 2) . ".";
+                    
+                    if ($diferencia > 0.01) {
+                        $mensaje_exito .= " Hay una diferencia de $" . number_format($diferencia, 2) . " respecto al total de ventas del día.";
+                    } else {
+                        $mensaje_exito .= " El monto coincide con el total de ventas del día.";
+                    }
                     
                     // Redireccionar a la lista de facturas con un mensaje de éxito
                     $_SESSION['alerta'] = [
@@ -87,6 +105,18 @@ include '../../includes/header.php';
         <?php if (!empty($mensaje_exito)): ?>
         <div class="alert alert-success">
             <?php echo $mensaje_exito; ?>
+            
+            <?php if ($resultado_generacion): ?>
+            <div class="mt-3">
+                <h6>Detalles:</h6>
+                <ul>
+                    <li>Total ventas del día: $<?php echo number_format($resultado_generacion['total_ventas'], 2); ?></li>
+                    <li>Total facturas generadas: $<?php echo number_format($resultado_generacion['total_generado'], 2); ?></li>
+                    <li>Número de facturas: <?php echo $resultado_generacion['total_facturas']; ?></li>
+                    <li>Diferencia: $<?php echo number_format(abs($resultado_generacion['total_ventas'] - $resultado_generacion['total_generado']), 2); ?></li>
+                </ul>
+            </div>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
         

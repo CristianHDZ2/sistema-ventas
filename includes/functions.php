@@ -486,9 +486,6 @@ function actualizarVenta($id, $fecha, $ruta_id, $productos) {
     }
 }
 
-/**
- * Generar facturas a partir de las ventas diarias
- */
 function generarFacturas($fecha, $ventas_productos, $min_factura = 5.00, $max_factura = 45.00) {
     global $conn;
     
@@ -527,6 +524,7 @@ function generarFacturas($fecha, $ventas_productos, $min_factura = 5.00, $max_fa
                 $productos_disponibles[$producto['id']]['min_cantidad'] = 3; // Mínimo 3 unidades
             }
         }
+        
         // Generar las facturas hasta cubrir el total de ventas
         $facturas = [];
         $total_generado = 0;
@@ -579,6 +577,7 @@ function generarFacturas($fecha, $ventas_productos, $min_factura = 5.00, $max_fa
             $detalles_factura = [];
             $total_factura = 0;
             $productos_en_factura = []; // Productos ya agregados a esta factura
+            
             // Primero, tratar de agregar Agua Caída del Cielo si está disponible y en cantidad suficiente
             if ($agua_caida_cielo_id && isset($productos_disponibles[$agua_caida_cielo_id]) && 
                 $productos_disponibles[$agua_caida_cielo_id]['cantidad_restante'] >= 3) {
@@ -669,6 +668,7 @@ function generarFacturas($fecha, $ventas_productos, $min_factura = 5.00, $max_fa
                 $productos_disponibles[$producto_key]['cantidad_restante'] -= $cantidad;
                 $productos_en_factura[$producto_key] = true; // Marcar como ya agregado a esta factura
             }
+            
             // Si no se pudo agregar ningún producto a la factura, salir del ciclo
             if (empty($detalles_factura)) {
                 // Eliminar la factura vacía
@@ -725,113 +725,71 @@ function generarFacturas($fecha, $ventas_productos, $min_factura = 5.00, $max_fa
         }
         
         // Si quedaron productos sin distribuir, crear facturas adicionales
-        if (!empty($productos_pendientes)) {
-            while (!empty($productos_pendientes)) {
-                // Generar un número de factura
-                $numero_factura = $numero_factura_base . '-' . str_pad($contador_factura, 3, '0', STR_PAD_LEFT);
-                
-                // Crear la factura
-                $sql = "INSERT INTO facturas (fecha, numero_factura, total) VALUES (:fecha, :numero_factura, :total)";
-                $stmt = $conn->prepare($sql);
-                $stmt->bindParam(':fecha', $fecha);
-                $stmt->bindParam(':numero_factura', $numero_factura);
-                $stmt->bindValue(':total', 0); // Se actualizará después con el total real
-                $stmt->execute();
-                
-                $factura_id = $conn->lastInsertId();
-                
-                // Agregar productos a la factura
-                $detalles_factura = [];
-                $total_factura = 0;
-                $productos_en_factura = []; // Productos ya agregados a esta factura
-                
-                // Intentar agregar todos los productos pendientes, respetando el monto máximo
-                $monto_objetivo = min($max_factura, array_sum(array_map(function($p) {
-                    return $p['cantidad_restante'] * $p['precio'];
-                }, $productos_pendientes)));
-                
-                foreach ($productos_pendientes as $prod_id => $prod) {
-                    if ($prod['cantidad_restante'] <= 0) continue;
+        if (!empty($productos_pendientes) && ($total_ventas - $total_generado) > 0.01) {
+            // Crear una última factura para ajustar la diferencia
+            $numero_factura = $numero_factura_base . '-' . str_pad($contador_factura, 3, '0', STR_PAD_LEFT);
+            
+            // Calcular el monto pendiente
+            $monto_pendiente = $total_ventas - $total_generado;
+            
+            // Crear la factura de ajuste
+            $sql = "INSERT INTO facturas (fecha, numero_factura, total) VALUES (:fecha, :numero_factura, :total)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':fecha', $fecha);
+            $stmt->bindParam(':numero_factura', $numero_factura);
+            $stmt->bindParam(':total', $monto_pendiente);
+            $stmt->execute();
+            
+            $factura_id = $conn->lastInsertId();
+            
+            // Buscar un producto para ajustar
+            $ajuste_realizado = false;
+            
+            foreach ($productos_pendientes as $prod_id => $prod) {
+                if ($prod['cantidad_restante'] > 0) {
+                    // Calcular cuántas unidades necesitamos para el ajuste
+                    $cantidad_ajuste = 1; // Al menos una unidad
                     
-                    $espacio_disponible = $monto_objetivo - $total_factura;
-                    $cantidad_posible = min(floor($espacio_disponible / $prod['precio']), $prod['cantidad_restante']);
+                    // Crear el detalle de la factura de ajuste
+                    $sql = "INSERT INTO detalle_facturas (factura_id, producto_id, cantidad, precio_unitario, subtotal) 
+                            VALUES (:factura_id, :producto_id, :cantidad, :precio_unitario, :subtotal)";
                     
-                    if ($cantidad_posible < $prod['min_cantidad']) {
-                        continue; // No se pueden agregar suficientes unidades
-                    }
-                    
-                    $cantidad = min($cantidad_posible, $prod['cantidad_restante']);
-                    $subtotal = $cantidad * $prod['precio'];
-                    
-                    if ($total_factura + $subtotal <= $monto_objetivo) {
-                        $detalles_factura[] = [
-                            'producto_id' => $prod['id'],
-                            'cantidad' => $cantidad,
-                            'precio' => $prod['precio'],
-                            'subtotal' => $subtotal
-                        ];
-                        
-                        $total_factura += $subtotal;
-                        $productos_pendientes[$prod_id]['cantidad_restante'] -= $cantidad;
-                        $productos_en_factura[$prod_id] = true;
-                        
-                        if ($productos_pendientes[$prod_id]['cantidad_restante'] <= 0) {
-                            unset($productos_pendientes[$prod_id]);
-                        }
-                    }
-                    
-                    // Si la factura está llena, salir del bucle
-                    if ($total_factura >= $monto_objetivo) {
-                        break;
-                    }
-                }
-                
-                // Si no se pudo agregar ningún producto a la factura, salir del ciclo
-                if (empty($detalles_factura)) {
-                    // Eliminar la factura vacía
-                    $sql = "DELETE FROM facturas WHERE id = :id";
                     $stmt = $conn->prepare($sql);
-                    $stmt->bindParam(':id', $factura_id);
+                    $stmt->bindParam(':factura_id', $factura_id);
+                    $stmt->bindParam(':producto_id', $prod_id);
+                    $stmt->bindParam(':cantidad', $cantidad_ajuste);
+                    $stmt->bindParam(':precio_unitario', $prod['precio']);
+                    $stmt->bindValue(':subtotal', $monto_pendiente);
                     $stmt->execute();
+                    
+                    $ajuste_realizado = true;
                     break;
                 }
+            }
+            
+            // Si no pudimos hacer el ajuste con productos pendientes, buscar cualquier producto
+            if (!$ajuste_realizado && !empty($ventas_productos)) {
+                $primer_producto = reset($ventas_productos);
                 
-                // Insertar los detalles de la factura
                 $sql = "INSERT INTO detalle_facturas (factura_id, producto_id, cantidad, precio_unitario, subtotal) 
                         VALUES (:factura_id, :producto_id, :cantidad, :precio_unitario, :subtotal)";
                 
+                $cantidad_ajuste = 1;
                 $stmt = $conn->prepare($sql);
-                
-                foreach ($detalles_factura as $detalle) {
-                    $producto_id = $detalle['producto_id'];
-                    $cantidad = $detalle['cantidad'];
-                    $precio = $detalle['precio'];
-                    $subtotal = $detalle['subtotal'];
-                    
-                    $stmt->bindParam(':factura_id', $factura_id);
-                    $stmt->bindParam(':producto_id', $producto_id);
-                    $stmt->bindParam(':cantidad', $cantidad);
-                    $stmt->bindParam(':precio_unitario', $precio);
-                    $stmt->bindParam(':subtotal', $subtotal);
-                    $stmt->execute();
-                }
-                
-                // Actualizar la factura con el total real
-                $sql = "UPDATE facturas SET total = :total WHERE id = :id";
-                $stmt = $conn->prepare($sql);
-                $stmt->bindParam(':id', $factura_id);
-                $stmt->bindParam(':total', $total_factura);
+                $stmt->bindParam(':factura_id', $factura_id);
+                $stmt->bindParam(':producto_id', $primer_producto['id']);
+                $stmt->bindParam(':cantidad', $cantidad_ajuste);
+                $stmt->bindParam(':precio_unitario', $primer_producto['precio']);
+                $stmt->bindValue(':subtotal', $monto_pendiente);
                 $stmt->execute();
-                
-                $total_generado += $total_factura;
-                $contador_factura++;
-                
-                $facturas[] = [
-                    'id' => $factura_id,
-                    'numero' => $numero_factura,
-                    'total' => $total_factura
-                ];
             }
+            
+            $total_generado += $monto_pendiente;
+            $facturas[] = [
+                'id' => $factura_id,
+                'numero' => $numero_factura,
+                'total' => $monto_pendiente
+            ];
         }
         
         // Confirmar la transacción
@@ -841,6 +799,7 @@ function generarFacturas($fecha, $ventas_productos, $min_factura = 5.00, $max_fa
             'exito' => true,
             'total_facturas' => count($facturas),
             'total_generado' => $total_generado,
+            'total_ventas' => $total_ventas,
             'facturas' => $facturas
         ];
         
