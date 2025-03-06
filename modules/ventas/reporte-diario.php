@@ -9,8 +9,8 @@ require_once '../../includes/functions.php';
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 
 // Obtener ventas del día
-$ventas_general = reporteVentasPorProducto($fecha, $fecha, 0);
-$ventas_big_cola = reporteVentasPorProducto($fecha, $fecha, 1);
+$ventas_general = reporteVentasPorProducto($fecha, $fecha, 2); // Productos de la categoría "Otros productos" (ID 2)
+$ventas_big_cola = reporteVentasPorProducto($fecha, $fecha, 1); // Productos de la categoría "Big Cola" (ID 1)
 
 // Obtener ventas por ruta
 $ventas_por_ruta = reporteVentasPorRuta($fecha, $fecha);

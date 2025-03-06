@@ -303,7 +303,7 @@ function obtenerDetallesVenta($venta_id) {
 /**
  * Obtener reporte de ventas por producto en un rango de fechas
  */
-function reporteVentasPorProducto($fecha_inicio, $fecha_fin, $es_big_cola = null) {
+function reporteVentasPorProducto($fecha_inicio, $fecha_fin, $categoria_id = null) {
     global $conn;
     
     $sql = "SELECT 
@@ -321,13 +321,11 @@ function reporteVentasPorProducto($fecha_inicio, $fecha_fin, $es_big_cola = null
                 productos p ON dv.producto_id = p.id
             JOIN 
                 categorias c ON p.categoria_id = c.id
-            JOIN 
-                rutas r ON v.ruta_id = r.id
             WHERE 
                 v.fecha BETWEEN :fecha_inicio AND :fecha_fin";
     
-    if ($es_big_cola !== null) {
-        $sql .= " AND r.es_big_cola = :es_big_cola";
+    if ($categoria_id !== null) {
+        $sql .= " AND p.categoria_id = :categoria_id";
     }
     
     $sql .= " GROUP BY p.id, p.nombre, p.precio, c.nombre
@@ -337,8 +335,8 @@ function reporteVentasPorProducto($fecha_inicio, $fecha_fin, $es_big_cola = null
     $stmt->bindParam(':fecha_inicio', $fecha_inicio);
     $stmt->bindParam(':fecha_fin', $fecha_fin);
     
-    if ($es_big_cola !== null) {
-        $stmt->bindParam(':es_big_cola', $es_big_cola, PDO::PARAM_INT);
+    if ($categoria_id !== null) {
+        $stmt->bindParam(':categoria_id', $categoria_id, PDO::PARAM_INT);
     }
     
     $stmt->execute();

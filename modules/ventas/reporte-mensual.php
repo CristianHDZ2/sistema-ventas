@@ -14,8 +14,8 @@ $fecha_inicio = "$ano-$mes-01";
 $fecha_fin = date('Y-m-t', strtotime($fecha_inicio));
 
 // Obtener ventas del mes
-$ventas_general = reporteVentasPorProducto($fecha_inicio, $fecha_fin, 0);
-$ventas_big_cola = reporteVentasPorProducto($fecha_inicio, $fecha_fin, 1);
+$ventas_general = reporteVentasPorProducto($fecha_inicio, $fecha_fin, 2); // Productos de categoría "Otros" (ID 2)
+$ventas_big_cola = reporteVentasPorProducto($fecha_inicio, $fecha_fin, 1); // Productos de categoría "Big Cola" (ID 1)
 
 // Obtener ventas por ruta
 $ventas_por_ruta = reporteVentasPorRuta($fecha_inicio, $fecha_fin);
